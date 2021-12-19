@@ -57,6 +57,9 @@ class detect_posts(commands.Cog, name="detect posts"):
         reply = ""
         for post in violating_post:
             reply = reply + post["link"] + '\n'
+        
+        if reply == "":
+            reply = "No violators detected."
         reply = reply + '\n'
         #print(reply)
         
