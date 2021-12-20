@@ -17,7 +17,8 @@ class detect_posts(commands.Cog, name="detect posts"):
         #new_s = unidecode.unidecode(new_s)
         new_s = new_s.replace("4", "a")
         new_s = new_s.replace("3", "e")
-        
+        new_s = new_s.replace("0", "o")
+
         return new_s
 
     def get_page_sources(self, url):
@@ -66,8 +67,8 @@ class detect_posts(commands.Cog, name="detect posts"):
         await ctx.reply(reply)
 
     @commands.command()
-    async def card(self, ctx):
-        page_source = self.get_page_sources('https://apps.qoo-app.com/en/app-card/4847')
+    async def card(self, ctx, arg1):
+        page_source = self.get_page_sources('https://apps.qoo-app.com/en/app-card/' + str(arg1))
         
         posts_list = page_source.findAll("div", class_="qoo-post-item")
         
