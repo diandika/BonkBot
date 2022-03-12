@@ -58,7 +58,7 @@ class detect_posts(commands.Cog, name="detect posts"):
                 violating_post.append(post)
         violating_post
         
-        reply = "Found " + len(violating_post) + "/" + len(post_info_list) + " violating posts" + "\n"
+        reply = "Found " + str(len(violating_post)) + "/" + str(len(post_info_list)) + " violating posts" + "\n"
         for post in violating_post:
             reply = reply + post["link"] + '\n'
         
@@ -106,7 +106,7 @@ class detect_posts(commands.Cog, name="detect posts"):
                 if any(word in post["char_name"] for word in word_list) or any(word in post["desc"] for word in word_list) or any(word in post["guild_name"] for word in word_list) :
                     violating_post.append(post)
             
-            reply = ""
+            reply = "Found " + str(len(violating_post)) + "/" + str(len(post_info_list)) + " violating posts" + "\n"
             for post in violating_post:
                 reply = reply + post["user"] + '\n'
                 
