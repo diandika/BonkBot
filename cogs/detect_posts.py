@@ -114,7 +114,7 @@ class detect_posts(commands.Cog, name="detect posts"):
                 await ctx.send(reply)
             
         else:
-            game_list = ["4847", "2519", "191", "11812", "7874"]
+            game_list = ["4847", "2519", "191", "11812", "7874", "10427"]
             for i in game_list:
                 await self.card(ctx, i)
 
