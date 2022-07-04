@@ -1,3 +1,4 @@
+import os
 import nextcord
 import requests
 from setuptools import Command
@@ -39,7 +40,9 @@ class detect_posts(commands.Cog, name="detect posts"):
         time.sleep(2)
         Keys.END
         time.sleep(2)
-        return BeautifulSoup(driver, "lxml")
+        page = BeautifulSoup(driver, "lxml")
+        driver.close()
+        return page
 
     def get_violating_post(self, post_list):
         with open("./cogs/blackwordlist.json", 'r', encoding='utf-8-sig') as file:
