@@ -16,6 +16,7 @@ class detect_posts(commands.Cog, name="detect posts"):
     def normalize(self, s):
         new_s = unicodedata.normalize("NFKD", s.lower())
         #new_s = unidecode.unidecode(new_s)
+        new_s = new_s.replace("1", "l")
         new_s = new_s.replace("4", "a")
         new_s = new_s.replace("3", "e")
         new_s = new_s.replace("0", "o")
