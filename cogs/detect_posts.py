@@ -5,6 +5,10 @@ import unidecode
 import unicodedata
 import json
 import numpy as np
+import time
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 from nextcord.ext import commands
 
@@ -24,8 +28,18 @@ class detect_posts(commands.Cog, name="detect posts"):
         return new_s
 
     def get_page_sources(self, url):
-        page = requests.get(url)
-        return BeautifulSoup(page.text, "html.parser")
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--no-sandbox")
+        driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=chrome_options)
+
+        driver.get(url)
+        time.sleep(2)
+        Keys.END
+        time.sleep(2)
+        return BeautifulSoup(driver, "lxml")
 
     def get_violating_post(self, post_list):
         with open("./cogs/blackwordlist.json", 'r', encoding='utf-8-sig') as file:
