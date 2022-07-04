@@ -1,4 +1,3 @@
-import os
 import nextcord
 import requests
 from setuptools import Command
@@ -29,20 +28,13 @@ class detect_posts(commands.Cog, name="detect posts"):
         return new_s
 
     def get_page_sources(self, url):
-        chrome_options = webdriver.ChromeOptions()
-        chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--no-sandbox")
-        driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=chrome_options)
-
-        driver.get(url)
-        time.sleep(2)
-        Keys.END
-        time.sleep(2)
-        page = BeautifulSoup(driver, "lxml")
-        driver.close()
-        return page
+        # driver = webdriver.Firefox()
+        # driver.get(url)
+        # time.sleep(2)
+        # Keys.END
+        # time.sleep(2)
+        page = requests.get(url)
+        return BeautifulSoup(page.text, "html.parser")
 
     def get_violating_post(self, post_list):
         with open("./cogs/blackwordlist.json", 'r', encoding='utf-8-sig') as file:
