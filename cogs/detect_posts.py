@@ -136,7 +136,7 @@ class detect_posts(commands.Cog, name="detect posts"):
         profile_list = []
         for i in game_list:
             reply, user_list = self.card(i)
-            profile_list = profile_list + list(set(profile_list) - set(user_list))
+            profile_list = profile_list + list(set(user_list) - set(profile_list))
             full_reply = full_reply + reply + '\n'
         full_reply = full_reply + '\n'.join(profile_list)
         await ctx.reply(full_reply)
