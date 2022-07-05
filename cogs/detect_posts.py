@@ -6,6 +6,7 @@ import unicodedata
 import json
 import numpy as np
 import time
+from threading import Timer
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
@@ -84,54 +85,55 @@ class detect_posts(commands.Cog, name="detect posts"):
         
         await ctx.reply(reply)
 
+    def card(self, arg1 = ""):
+        post_info_list = []
+        posts_list = []
+
+        attempt = 3
+        while (len(posts_list) == 0 and attempt > 0):
+            page_source = self.get_page_sources('https://apps.qoo-app.com/en/app-card/' + str(arg1))
+            
+            posts_list = page_source.findAll("div", class_="qoo-post-item")
+            attempt = attempt - 1
+            
+        for post in posts_list:
+            post_info = {"user": "", "link": "", "char_name": "", "guild_name": "", "desc": ""}
+        
+            post_info["user"] = post.select('a.icon.qoo-egg-view')[0]["href"]
+            post_info["link"] = 'https://user.qoo-app.com/en/card/' + post["data-id"]
+            td = post.findAll('td')
+            if len(td)>0 :
+                post_info["char_name"] = self.normalize(td[1].get_text(strip=True))
+            if len(td)>2 :
+                post_info["guild_name"] = self.normalize(td[3].get_text(strip=True))
+
+            desc = post.findAll('p')
+            if len(desc) > 1:
+                post_info["desc"] = self.normalize(desc[1].get_text(strip=True))
+
+            post_info_list.append(post_info)
+        
+        with open("./cogs/blackwordlist.json", 'r', encoding='utf-8-sig') as file:
+            word_list = json.load(file)["word_list"]
+        
+        violating_post = []
+        for post in post_info_list:
+            if any(word in post["char_name"] for word in word_list) or any(word in post["desc"] for word in word_list) or any(word in post["guild_name"] for word in word_list) :
+                violating_post.append(post)
+        
+        reply = "Found " + str(len(violating_post)) + "/" + str(len(post_info_list)) + " violating posts" + "\n"
+        for post in violating_post:
+            reply = reply + post["user"] + '\n'
+            
+        return(reply)
+
     @commands.command()
-    async def card(self, ctx, arg1 = ""):
-
-        if arg1 != "":
-            post_info_list = []
-            posts_list = []
-
-            while (len(posts_list) == 0):
-                page_source = self.get_page_sources('https://apps.qoo-app.com/en/app-card/' + str(arg1))
-                
-                posts_list = page_source.findAll("div", class_="qoo-post-item")
-                
-            for post in posts_list:
-                post_info = {"user": "", "link": "", "char_name": "", "guild_name": "", "desc": ""}
-            
-                post_info["user"] = post.select('a.icon.qoo-egg-view')[0]["href"]
-                post_info["link"] = 'https://user.qoo-app.com/en/card/' + post["data-id"]
-                td = post.findAll('td')
-                if len(td)>0 :
-                    post_info["char_name"] = self.normalize(td[1].get_text(strip=True))
-                if len(td)>2 :
-                    post_info["guild_name"] = self.normalize(td[3].get_text(strip=True))
-
-                desc = post.findAll('p')
-                if len(desc) > 1:
-                    post_info["desc"] = self.normalize(desc[1].get_text(strip=True))
-
-                post_info_list.append(post_info)
-            
-            with open("./cogs/blackwordlist.json", 'r', encoding='utf-8-sig') as file:
-                word_list = json.load(file)["word_list"]
-            
-            violating_post = []
-            for post in post_info_list:
-                if any(word in post["char_name"] for word in word_list) or any(word in post["desc"] for word in word_list) or any(word in post["guild_name"] for word in word_list) :
-                    violating_post.append(post)
-            
-            reply = "Found " + str(len(violating_post)) + "/" + str(len(post_info_list)) + " violating posts" + "\n"
-            for post in violating_post:
-                reply = reply + post["user"] + '\n'
-                
-            if reply != "":
-                await ctx.send(reply)
-            
-        else:
-            game_list = ["4847", "2519", "9038", "18337", "191", "11812", "7874", "10427", "19415"]
-            for i in game_list:
-                await self.card(ctx, i)
+    async def cards(self, ctx, arg1 = ""):
+        game_list = ["4847", "2519", "9038", "18337", "191", "11812", "7874", "10427", "19415"]
+        reply = ""
+        for i in game_list:
+            reply = reply + self.card(i)
+        await ctx.reply(reply)
 
     @commands.command()
     async def notes(self, ctx, arg1 = ""):
@@ -141,7 +143,6 @@ class detect_posts(commands.Cog, name="detect posts"):
 
             while (len(posts_list) == 0):
                 page_source = self.get_page_sources('https://apps.qoo-app.com/en/app-note/')
-                print(page_source)
                 posts_list = page_source.findAll("div", class_="qoo-note-view")
             
             for post in posts_list:
