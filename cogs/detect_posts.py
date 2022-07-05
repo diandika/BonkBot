@@ -121,19 +121,25 @@ class detect_posts(commands.Cog, name="detect posts"):
             if any(word in post["char_name"] for word in word_list) or any(word in post["desc"] for word in word_list) or any(word in post["guild_name"] for word in word_list) :
                 violating_post.append(post)
         
-        reply = "Found " + str(len(violating_post)) + "/" + str(len(post_info_list)) + " violating posts" + "\n"
+        reply = "Found " + str(len(violating_post)) + "/" + str(len(post_info_list)) + " violating posts"
+        user_list = []
         for post in violating_post:
-            reply = reply + post["user"] + '\n'
+            user_list.append(post["user"])
+            # reply = reply + post["user"] + '\n'
             
-        return(reply)
+        return(reply, user_list)
 
     @commands.command()
     async def cards(self, ctx, arg1 = ""):
         game_list = ["4847", "2519", "9038", "18337", "191", "11812", "7874", "10427", "19415"]
-        reply = ""
+        full_reply = ""
+        profile_list = []
         for i in game_list:
-            reply = reply + self.card(i)
-        await ctx.reply(reply)
+            reply, user_list = self.card(i)
+            profile_list = profile_list + list(set(profile_list) - set(user_list))
+            full_reply = full_reply + reply + '\n'
+        full_reply = full_reply + '\n'.join(profile_list)
+        await ctx.reply(full_reply)
 
     @commands.command()
     async def notes(self, ctx, arg1 = ""):
