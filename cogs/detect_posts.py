@@ -33,13 +33,11 @@ class detect_posts(commands.Cog, name="detect posts"):
     def get_page_sources(self, url):
         load_dotenv()
         options = Options()
-        options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+        options.binary_location = os.getenv("GOOGLE_CHROME_BIN")
         options.headless = True
-        options.add_argument("--disable-gpu")
-        options.add_argument('--ignore-ssl-errors')
-        options.add_argument('--ignore-certificate-errors-spki-list')
-        options.add_argument('log-level=2')
-        driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
+        options.add_argument('--disable-gpu')
+        options.add_argument('--no-sandbox')
+        driver = webdriver.Chrome(executable_path=os.getenv("CHROMEDRIVER_PATH"), chrome_options=options)
         driver.get(url)
         time.sleep(2)
         driver.find_element(By.XPATH, '//body').send_keys(Keys.END)
