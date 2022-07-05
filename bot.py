@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from nextcord.ext import commands
 
+
 def main():
 	client = commands.Bot(command_prefix = "#")
 

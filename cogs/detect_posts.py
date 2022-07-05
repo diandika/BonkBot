@@ -1,13 +1,15 @@
+from lib2to3.pgen2.token import OP
 import nextcord
 import requests
 from setuptools import Command
 import unidecode
 import unicodedata
 import json
-import numpy as np
 import time
-from threading import Timer
+import os
+from dotenv import load_dotenv
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
@@ -29,20 +31,33 @@ class detect_posts(commands.Cog, name="detect posts"):
         return new_s
 
     def get_page_sources(self, url):
-        # driver = webdriver.Firefox()
-        # driver.get(url)
-        # time.sleep(2)
-        # Keys.END
-        # time.sleep(2)
-        page = requests.get(url)
-        return BeautifulSoup(page.text, "html.parser")
+        load_dotenv()
+        options = Options()
+        options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+        options.headless = True
+        options.add_argument("--disable-gpu")
+        options.add_argument('--ignore-ssl-errors')
+        options.add_argument('--ignore-certificate-errors-spki-list')
+        options.add_argument('log-level=2')
+        driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=options)
+        driver.get(url)
+        time.sleep(2)
+        driver.find_element(By.XPATH, '//body').send_keys(Keys.END)
+        time.sleep(2)
+        page = BeautifulSoup(driver.page_source, "lxml")
+        driver.quit()
+        return page
 
     def get_violating_post(self, post_list):
+        with open("./cogs/whitelistuser.json", 'r') as file:
+            white_list = json.load(file)["mod"]
         with open("./cogs/blackwordlist.json", 'r', encoding='utf-8-sig') as file:
             word_list = json.load(file)["word_list"]
         
         violating_post = []
         for post in post_list:
+            if any(uid in post["user"] for uid in white_list):
+                continue
             if any(word in post["title"] for word in word_list) or any(word in post["desc"] for word in word_list) :
                 violating_post.append(post)
         
@@ -141,49 +156,54 @@ class detect_posts(commands.Cog, name="detect posts"):
         full_reply = full_reply + '\n'.join(profile_list)
         await ctx.reply(full_reply)
 
+    def note(self, arg1 = ""):
+        post_info_list = []
+        posts_list = []
+
+        attempt = 3
+        while (len(posts_list) == 0 and attempt > 0):
+            page_source = self.get_page_sources('https://apps.qoo-app.com/en/app-note/' + str(arg1))
+            posts_list = page_source.findAll("div", class_="qoo-note-view")
+            attempt = attempt - 1
+        
+        for post in posts_list:
+            post_info = {"uid": "", "user": "", "link": "", "title": "", "desc": ""}
+            
+            post_info["user"] = post.findAll("a", class_="artist")[0]["href"]
+            post_info["link"] = post["data-href"]
+            title = post.findAll("strong", class_="content-title")
+            if len(title) > 0 :
+                post_info["title"] = self.normalize(title[0].text)
+            desc = post.findAll("cite", class_="description")
+            if len(desc) > 0 :
+                post_info["desc"] = self.normalize(desc[0].get_text(strip=True))
+
+            post_info_list.append(post_info)
+            
+        with open("./cogs/blackwordlist.json", 'r', encoding='utf-8-sig') as file:
+            word_list = json.load(file)["word_list"]
+        
+        violating_post = self.get_violating_post(post_info_list)
+        
+        reply = "Found " + str(len(violating_post)) + "/" + str(len(post_info_list)) + " violating posts"   
+        user_list = []
+        for post in violating_post:
+            user_list.append(post["user"])
+            # reply = reply + post["user"] + '\n'
+            
+        return(reply, user_list)
+    
     @commands.command()
     async def notes(self, ctx, arg1 = ""):
-        if arg1 != "":
-            post_info_list = []
-            posts_list = []
-
-            while (len(posts_list) == 0):
-                page_source = self.get_page_sources('https://apps.qoo-app.com/en/app-note/')
-                posts_list = page_source.findAll("div", class_="qoo-note-view")
-            
-            for post in posts_list:
-                post_info = {"user": "", "link": "", "title": "", "desc": ""}
-
-                post_info["user"] = post.findAll("a", class_="artist")[0]["href"]
-                post_info["link"] = post["data-href"]
-                title = post.findAll("strong", class_="content-title")
-                if len(title) > 0 :
-                    post_info["title"] = self.normalize(title[0].text)
-                desc = post.findAll("cite", class_="description")
-                if len(desc) > 0 :
-                    post_info["desc"] = self.normalize(desc[0].get_text(strip=True))
-
-                post_info_list.append(post_info)
-                
-            with open("./cogs/blackwordlist.json", 'r', encoding='utf-8-sig') as file:
-                word_list = json.load(file)["word_list"]
-            
-            violating_post = []
-            for post in post_info_list:
-                if any(word in post["char_name"] for word in word_list) or any(word in post["desc"] for word in word_list) or any(word in post["guild_name"] for word in word_list) :
-                    violating_post.append(post)
-            
-            reply = "Found " + str(len(violating_post)) + "/" + str(len(post_info_list)) + " violating posts" + "\n"
-            for post in violating_post:
-                reply = reply + post["user"] + '\n'
-                
-            if reply != "":
-                await ctx.send(reply)
-            
-        else:
-            game_list = ["4847", "2519", "191", "11812", "7874", "10427", "19415"]
-            for i in game_list:
-                await self.notes(ctx, i)
+        game_list = ["4847", "2519", "9038", "18337", "191", "11812", "7874", "10427", "19415"]
+        full_reply = ""
+        profile_list = []
+        for i in game_list:
+            reply, user_list = self.note(i)
+            profile_list = profile_list + list(set(user_list) - set(profile_list))
+            full_reply = full_reply + reply + '\n'
+        full_reply = full_reply + '\n'.join(profile_list)
+        await ctx.reply(full_reply)
 
 def setup(bot: commands.Bot):
     bot.add_cog(detect_posts(bot))
