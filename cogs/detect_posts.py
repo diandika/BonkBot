@@ -37,6 +37,7 @@ class detect_posts(commands.Cog, name="detect posts"):
         options.headless = True
         options.add_argument('--disable-gpu')
         options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage') 
         driver = webdriver.Chrome(chrome_options=options)
         driver.get(url)
         time.sleep(2)
